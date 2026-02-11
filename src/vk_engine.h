@@ -26,4 +26,28 @@ public:
 
 	//run main loop
 	void run();
+
+	//actual vulkan elements
+	VkInstance instance;								//library handle
+	VkDebugUtilsMessengerEXT debug_messenger;			//debug output handle
+	
+	VkPhysicalDevice chosenGPU;							//the graphics card chosen
+	VkDevice device; 									//logical device handle	
+	
+	VkSurfaceKHR surface; 								//the surface of the window in vulkan	
+
+	VkSwapchainKHR swapchain;							//the swapchain handle
+	VkFormat swapchainImageFormat;						//the format of the swapchain images
+
+	std::vector<VkImage> swapchainImages;				//the images in the swapchain
+	std::vector<VkImageView> swapchainImageViews;		//the image views for the swapchain images
+
+private:
+	
+	//this are some of the functions I need to pay more attention to
+	//and better understand whats going on
+	void init_vulkan();
+	void init_swapchain();
+
+
 };
