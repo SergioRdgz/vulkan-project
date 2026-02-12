@@ -42,12 +42,19 @@ public:
 	std::vector<VkImage> swapchainImages;				//the images in the swapchain
 	std::vector<VkImageView> swapchainImageViews;		//the image views for the swapchain images
 
+	VkQueue graphicsQueue;								//the queue we will submit draw calls to
+	uint32_t graphicsQueueFamily;						//the index for the family
+
+	VkCommandPool commandPool;							//used to allocate command buffers from	
+	VkCommandBuffer mainCommandBuffer;					//record drawing commands into this command buffer
+
 private:
 	
 	//this are some of the functions I need to pay more attention to
 	//and better understand whats going on
 	void init_vulkan();
 	void init_swapchain();
+	void init_commands();
 
 
 };

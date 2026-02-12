@@ -1,6 +1,6 @@
 ﻿
 #include "vk_engine.h"
-
+#include "vk_initializers.h"
 #include <SDL.h>
 #include <SDL_vulkan.h>
 
@@ -39,6 +39,10 @@ void VulkanEngine::init()
 	);
 	
 	init_vulkan();
+
+	init_swapchain();
+
+	init_commands();
 
 	//everything went fine
 	_isInitialized = true;
@@ -86,14 +90,73 @@ void VulkanEngine::init_vulkan()
 	device = vkbdevice.device;
 	chosenGPU = physicalDevice.physical_device;
 
+	graphicsQueue = vkbdevice.get_queue(vkb::QueueType::graphics).value();
+	graphicsQueueFamily = vkbdevice.get_queue_index(vkb::QueueType::graphics).value();
 
 }
 
+void VulkanEngine::init_swapchain()
+{
+	//as with the vulkan init function, use vkb library to simplify the process
 
+	vkb::SwapchainBuilder swapchainBuilder{ chosenGPU, device, surface };
+
+	vkb::Swapchain vkbSwapchain = swapchainBuilder
+		.use_default_format_selection()
+		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		.set_desired_extent(_windowExtent.width, _windowExtent.height)
+		.build()
+		.value();
+	//@@INTERESTING
+	//what does the value() function do in vkb?
+	 //if build is a success it returns the vkb::swapchain, if not it will trigger an error
+		//shouldn't this be handled with a check to catch the error then???
+
+
+	swapchain = vkbSwapchain.swapchain;
+	
+	swapchainImages = vkbSwapchain.get_images().value();
+	swapchainImageViews = vkbSwapchain.get_image_views().value();
+
+	swapchainImageFormat = vkbSwapchain.image_format;
+}
+
+void VulkanEngine::init_commands() 
+{
+	//implementation at vk_initializers.cpp
+	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	
+	//macro defined at line 16, check result, and prints error if it fails
+	//also crashes the program if fail
+	VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool)); 
+
+
+	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+	VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &mainCommandBuffer));
+}
 void VulkanEngine::cleanup()
 {	
-	if (_isInitialized) {
-		
+	if (_isInitialized) 
+	{
+		vkDestroyCommandPool(device, commandPool, nullptr);
+
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+
+		for (int i = 0; i < swapchainImageViews.size(); i++)
+		{
+			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
+		}
+
+
+		vkDestroyDevice(device, nullptr);
+
+		vkDestroySurfaceKHR(instance, surface, nullptr);
+
+		vkb::destroy_debug_utils_messenger(instance, debug_messenger);
+		vkDestroyInstance(instance, nullptr);
+
+
 		SDL_DestroyWindow(_window);
 	}
 }
