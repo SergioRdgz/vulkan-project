@@ -5,6 +5,7 @@ Vulkan project from scratch to review the API
       Models  
       Textures  
       Shaders ( descriptor sets, render pass, etc)  
+      Resize window
       Looking into alpha blending equations, and transparency sorting
       Transfer queue for asset uploading
       Multithreading to practice submitting command buffers to a main thread for queue submission
