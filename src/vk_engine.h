@@ -48,6 +48,14 @@ public:
 	VkCommandPool commandPool;							//used to allocate command buffers from	
 	VkCommandBuffer mainCommandBuffer;					//record drawing commands into this command buffer
 
+	//finally getting to the fun stuff
+	VkRenderPass renderPass; 							//describes the framebuffer attachments used in rendering	
+	std::vector<VkFramebuffer> frameBuffers;			//framebuffers for the render pass, one per swapchain image
+
+	VkSemaphore presentSemaphore,renderSemaphore;
+	VkFence renderFence;
+
+	
 private:
 	
 	//this are some of the functions I need to pay more attention to
@@ -55,6 +63,8 @@ private:
 	void init_vulkan();
 	void init_swapchain();
 	void init_commands();
-
+	void init_default_renderpass();
+	void init_framebuffers();
+	void init_sync_structures();
 
 };
