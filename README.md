@@ -2,7 +2,8 @@
 Vulkan project from scratch to review the API
 
     TODO:
-      Models  
+      Window not in full screen 
+      Models
       Textures  
       Shaders ( descriptor sets, render pass, etc)  
       Resize window

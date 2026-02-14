@@ -55,7 +55,11 @@ public:
 	VkSemaphore presentSemaphore,renderSemaphore;
 	VkFence renderFence;
 
-	
+
+	VkPipelineLayout trianglePipelineLayout;
+	VkPipeline trianglePipeline;
+
+
 private:
 	
 	//this are some of the functions I need to pay more attention to
@@ -66,5 +70,25 @@ private:
 	void init_default_renderpass();
 	void init_framebuffers();
 	void init_sync_structures();
+	void init_pipelines();
 
+	//loads a shader module from a spir-v file. Returns false if it errors
+	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
+
+};
+
+class PipelineBuilder
+{
+public:
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+	VkViewport viewport;
+	VkRect2D scissor;
+	VkPipelineRasterizationStateCreateInfo rasterizer;
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineMultisampleStateCreateInfo multisampling;
+	VkPipelineLayout pipelineLayout;
+
+	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 };
