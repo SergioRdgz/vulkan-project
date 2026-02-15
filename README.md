@@ -3,13 +3,21 @@ Vulkan project from scratch to review the API
 
     TODO:
       Window not in full screen 
-      Models
-      Textures  
-      Shaders ( descriptor sets, render pass, etc)  
+      Models (using tinyobjloader or similar)
+      Textures (loading and binding)
+      Vertex buffers and index buffers (replacing hardcoded triangle)
+      Multiple models with different textures
+      Shaders (descriptor sets, render pass, etc)  
+      Alpha blending (blend state config, render pass setup)
+      Transparency sorting (depth-based or manual ordering)
+      PBR shader implementation (Cook-Torrance BRDF)
+      Swappable BRDF functions (Lambertian vs GGX, etc)
+      ImGui integration (for tweaking BRDF parameters)
       Resize window
-      Looking into alpha blending equations, and transparency sorting
-      Transfer queue for asset uploading
-      Multithreading to practice submitting command buffers to a main thread for queue submission
+
+    STRETCH:
+        Transfer queue for asset uploading
+        Multithreading to practice submitting command buffers to a main thread for queue submission
   
 
 ***Command Buffers***
@@ -22,4 +30,5 @@ Vulkan project from scratch to review the API
 ***About the render pass***
 
 this is roughly what I intent the render pass to do with the color attachment
+
 UNDEFINED -> RenderPass Begins -> Subpass 0 begins (Transition to Attachment Optimal) -> Subpass 0 renders -> Subpass 0 ends -> Renderpass Ends (Transitions to Present Source)
