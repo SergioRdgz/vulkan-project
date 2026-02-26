@@ -129,3 +129,45 @@ VkPipelineLayoutCreateInfo vkinit::pipeline_layout_create_info() {
 	info.pPushConstantRanges = nullptr;
 	return info;
 }
+
+VkFramebufferCreateInfo vkinit::framebuffer_create_info(VkRenderPass renderPass, VkExtent2D extent)
+{
+	VkFramebufferCreateInfo fbInfo = {};
+	fbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	fbInfo.pNext = nullptr;
+
+	fbInfo.renderPass = renderPass;
+	fbInfo.attachmentCount = 1; //only color attachment
+	fbInfo.width = extent.width;
+	fbInfo.height = extent.height;
+	fbInfo.layers = 1;
+	return fbInfo;
+}
+
+VkFenceCreateInfo vkinit::fence_create_info(VkFenceCreateFlags flags)
+{
+	VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.pNext = nullptr;
+
+	fenceCreateInfo.flags = flags;
+	return fenceCreateInfo;
+}
+
+VkSemaphoreCreateInfo vkinit::semaphore_create_info(VkSemaphoreCreateFlags flags)
+{
+	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphoreCreateInfo.pNext = nullptr;
+
+	semaphoreCreateInfo.flags = flags;
+	return semaphoreCreateInfo;
+}
+
+
+
+
+
+
+
+

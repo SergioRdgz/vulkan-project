@@ -5,13 +5,31 @@
 
 #include <vk_types.h>
 
+struct DeletionQueue
+{
+	std::deque<std::function<void()>> deletors;
+
+	void push_function(std::function<void()>&& function) {
+		deletors.push_back(function);
+	}
+
+	void flush() {
+		// reverse iterate the deletion queue to execute all the functions
+		for (auto it = deletors.rbegin(); it != deletors.rend(); it++) {
+			(*it)(); //call the function
+		}
+
+		deletors.clear();
+	}
+};
+
 class VulkanEngine {
 public:
 
 	bool _isInitialized{ false };
 	int _frameNumber {0};
 
-	VkExtent2D _windowExtent{ 1700 , 900 };
+	VkExtent2D _windowExtent{ 960 , 540 };
 
 	struct SDL_Window* _window{ nullptr };
 
@@ -55,9 +73,11 @@ public:
 	VkSemaphore presentSemaphore,renderSemaphore;
 	VkFence renderFence;
 
-
 	VkPipelineLayout trianglePipelineLayout;
 	VkPipeline trianglePipeline;
+
+
+	DeletionQueue deletionQueue;
 
 
 private:

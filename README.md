@@ -2,12 +2,11 @@
 Vulkan project from scratch to review the API
 
     TODO:
-      Window not in full screen 
       Models (using tinyobjloader or similar)
       Textures (loading and binding)
       Vertex buffers and index buffers (replacing hardcoded triangle)
       Multiple models with different textures
-      Shaders (descriptor sets, render pass, etc)  
+      Shaders (descriptor sets)  
       Alpha blending (blend state config, render pass setup)
       Transparency sorting (depth-based or manual ordering)
       PBR shader implementation (Cook-Torrance BRDF)

@@ -128,6 +128,10 @@ void VulkanEngine::init_swapchain()
 	swapchainImageViews = vkbSwapchain.get_image_views().value();
 
 	swapchainImageFormat = vkbSwapchain.image_format;
+
+	deletionQueue.push_function([=]() {
+		vkDestroySwapchainKHR(device, swapchain, nullptr);
+		});
 }
 
 void VulkanEngine::init_commands() 
@@ -143,6 +147,10 @@ void VulkanEngine::init_commands()
 	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(commandPool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 	VK_CHECK(vkAllocateCommandBuffers(device, &cmdAllocInfo, &mainCommandBuffer));
+
+	deletionQueue.push_function([=]() {
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		});
 }
 
 void VulkanEngine::init_default_renderpass()
@@ -194,20 +202,16 @@ void VulkanEngine::init_default_renderpass()
 	renderPassInfo.pSubpasses = &subpass;
 	
 	VK_CHECK(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
+
+	deletionQueue.push_function([=]() {
+		vkDestroyRenderPass(device, renderPass, nullptr);
+		});
 }
 
 void VulkanEngine::init_framebuffers()
 {
-	VkFramebufferCreateInfo fbInfo = {};
-	fbInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	fbInfo.pNext = nullptr;
-
-	fbInfo.renderPass = renderPass;
-	fbInfo.attachmentCount = 1; //only color attachment
-	fbInfo.width = _windowExtent.width;
-	fbInfo.height = _windowExtent.height;
-	fbInfo.layers = 1; 
-
+	VkFramebufferCreateInfo fbInfo = vkinit::framebuffer_create_info(renderPass,_windowExtent);
+	
 	//get image amount from swapchain
 	const uint32_t swapchainImageCount = swapchainImages.size();
 	frameBuffers = std::vector<VkFramebuffer>(swapchainImageCount);
@@ -216,27 +220,34 @@ void VulkanEngine::init_framebuffers()
 	{
 		fbInfo.pAttachments = &swapchainImageViews[i];
 		VK_CHECK(vkCreateFramebuffer(device, &fbInfo, nullptr, &frameBuffers[i]));
+
+		deletionQueue.push_function([=]() {
+			vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
+			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
+			});
 	}
 
 }
 
 void VulkanEngine::init_sync_structures()
 {
-	VkFenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.pNext = nullptr;
-
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; 
+	VkFenceCreateInfo fenceInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
 
 	VK_CHECK(vkCreateFence(device, &fenceInfo, nullptr, &renderFence));
 
-	VkSemaphoreCreateInfo semaphoreInfo = {};
-	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreInfo.pNext = nullptr;
-	semaphoreInfo.flags = 0;
+	deletionQueue.push_function([=]() {
+		vkDestroyFence(device, renderFence, nullptr);
+		});
+
+	VkSemaphoreCreateInfo semaphoreInfo = vkinit::semaphore_create_info();
 
 	VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &presentSemaphore));
 	VK_CHECK(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderSemaphore));
+
+	deletionQueue.push_function([=]() {
+		vkDestroySemaphore(device, presentSemaphore, nullptr);
+		vkDestroySemaphore(device, renderSemaphore, nullptr);
+		});
 }
 
 bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule)
@@ -341,6 +352,16 @@ void VulkanEngine::init_pipelines()
 
 	//finally build the pipeline
 	trianglePipeline = pipelineBuilder.build_pipeline(device, renderPass);
+
+
+	vkDestroyShaderModule(device, triangleFragShader, nullptr);
+	vkDestroyShaderModule(device, triangleVertexShader, nullptr);
+
+	deletionQueue.push_function([=]() {
+		vkDestroyPipeline(device, trianglePipeline, nullptr);
+		vkDestroyPipelineLayout(device, trianglePipelineLayout, nullptr);
+		});
+
 }
 
 void VulkanEngine::cleanup()
@@ -349,23 +370,8 @@ void VulkanEngine::cleanup()
 	{	
 		//ensure they are done being used
 		vkWaitForFences(device, 1, &renderFence, true, 1000000000);
-		vkDestroyFence(device, renderFence, nullptr);
 
-		vkDestroySemaphore(device, presentSemaphore, nullptr);
-		vkDestroySemaphore(device, renderSemaphore, nullptr);
-
-		vkDestroyCommandPool(device, commandPool, nullptr);
-
-		vkDestroySwapchainKHR(device, swapchain, nullptr);
-
-		vkDestroyRenderPass(device, renderPass, nullptr);
-
-		for (int i = 0; i < swapchainImageViews.size(); i++)
-		{
-			vkDestroyFramebuffer(device, frameBuffers[i], nullptr);
-			vkDestroyImageView(device, swapchainImageViews[i], nullptr);
-		}
-
+		deletionQueue.flush();
 
 		vkDestroyDevice(device, nullptr);
 
@@ -409,8 +415,7 @@ void VulkanEngine::draw()
 
 	//@@INTERESTING
 	//why is this needed? didnt we make a render pass already?
-	VkRenderPassBeginInfo rpInfo = {};
-	rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	VkRenderPassBeginInfo rpInfo = {};	rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	rpInfo.pNext = nullptr;
 
 	rpInfo.renderPass = renderPass;
@@ -432,7 +437,7 @@ void VulkanEngine::draw()
 	VK_CHECK(vkEndCommandBuffer(mainCommandBuffer));
 
 
-	// prepare the submission to the queue.
+// prepare the submission to the queue.
 //wait on the presentSemaphore, as that semaphore is signaled when the swapchain is ready
 //signal the renderSemaphore, to signal that rendering has finished
 

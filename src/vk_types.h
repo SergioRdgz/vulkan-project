@@ -7,3 +7,5 @@
 
 //we will add our main reusable types here
 #include <vector>
+#include <deque>
+#include <functional>
